@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Spotify Lyrics Player</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <link href="../css/style.css" rel="stylesheet">
+    <link rel="icon" href="data:,">
+
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="p-3 mb-4 border-bottom bg-dark">
+        <h3 class="text-white">Spotify Lyrics and Tab Display</h3>
+      </header>
+      <div id="login">
+
+        <a href="/login" class="btn btn-primary btn-lg" >Log in with Spotify</a>
+      </div>
+      <div id="loggedin">
+        <div id="user-profile">
+          <small class="text-muted">Logged in as <span id="user-name">nobody</span></small>
+        </div>
+        <div id="song-player" class="p-5 mb-4 bg-light rounded-3">
+          <div class="row">
+            <div class="col-3">
+              <img id="album-image" class="img-fluid" src="#">
+            </div>
+            <div class="col-6">
+              <h4 class="">Track Name: <span id="track-name" class="text-muted">loading...</span></h3>
+              <h4>Artist: <span id="track-artist" class="text-muted">loading...</span></h3>
+            </div>
+            <div class="col-3">
+              Play, Pause buttons go here
+            </div>
+          </div>
+
+        </div>
+        <div id="lyrics" class="text-center fs-3 border">
+          
+          
+          <div id="lyrics-text">
+
+          </div>
+        </div>
+        <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
+      </div>
+    </div>
+
+    
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.7.7/handlebars.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+
+    <script>
+      (function() { //jquery when page loads
+
+        function getLyrics() {
+          //cuts anything past certain characters in the song
+          //because azlyrics can't handle them
+          let charactersToCut = ["(", "-"]
+          let trackNameShortened = trackInfo.trackName
+          for (let i = 0; i < charactersToCut.length; i++) {
+            if (trackNameShortened.indexOf(charactersToCut[i]) != -1)
+            trackNameShortened = trackNameShortened.substring(0, trackNameShortened.indexOf(charactersToCut[i]))
+          }
+          console.log("Shortened track name is " + trackNameShortened)
+          $.ajax({
+            url: '/update-lyrics?trackTitle='+trackNameShortened+'&artistName='+trackInfo.artistName,
+            success: function(response) {
+              console.log(response)
+              trackInfo.lyrics = response        
+            }
+          }).done(function() {
+                updateTemplate()
+          })
+        }
+        function updateTrackInfo() {
+          $.ajax({
+                url: 'https://api.spotify.com/v1/me/player/currently-playing?market=US',
+                headers: {
+                  'Authorization': 'Bearer ' + access_token
+                },
+                success: function(response) {
+                  console.log(response)
+                  trackInfo.trackName = response["item"]["name"]
+                  trackInfo.artistName = response["item"]["artists"][0]["name"]
+                  trackInfo.previousTrackID = trackInfo.currentTrackID
+                  trackInfo.currentTrackID = response["item"]["id"]
+                  trackInfo.albumImage = response["item"]["album"]["images"][1]["url"]
+                  document.getElementById("album-image").style.visibility = "visible"
+                }
+            }).done(function() {
+              checkIfSongChanged()
+              updateTemplate()
+            });
+        }
+
+        function checkIfSongChanged() {
+        
+          if (
+            (trackInfo.previousTrackID == 0) 
+            || 
+            (trackInfo.currentTrackID != 0 && trackInfo.currentTrackID != trackInfo.previousTrackID)
+          ) {
+            getLyrics()
+          }
+        }
+
+        function updateTemplate() {
+          document.getElementById("track-name").innerHTML = trackInfo.trackName
+          document.getElementById("track-artist").innerHTML = trackInfo.artistName
+          document.getElementById("album-image").src = trackInfo.albumImage
+          console.log(trackInfo.lyrics)
+          document.getElementById("lyrics-text").innerHTML = trackInfo.lyrics
+        }
+
+        /**
+         * Obtains parameters from the hash of the URL
+         * @return Object
+         */
+        function getHashParams() {
+          var hashParams = {};
+          var e, r = /([^&;=]+)=?([^&;]*)/g,
+              q = window.location.hash.substring(1);
+          while ( e = r.exec(q)) {
+             hashParams[e[1]] = decodeURIComponent(e[2]);
+          }
+          return hashParams;
+        }
+        /////////////////////////////////////////////////////
+        //VARIABLES
+        /////////////////////////////////////////////////////
+        var songUpdateInterval
+        var trackInfo = {
+          previousTrackID: 0,
+          currentTrackID: 0,
+          trackName: null,
+          artistName: null
+        }
+        var userInfo = {
+          name: "Default",
+          imgURL: null
+        }
+
+        var params = getHashParams();
+
+        var access_token = params.access_token,
+            refresh_token = params.refresh_token,
+            error = params.error;
+        ////////////////////////////////////////////////////////////
+        //CODE BELOW RUNS IMMEDIATELY ON PAGE LOAD
+        ////////////////////////////////////////////////////////////
+        if (error) {
+          alert('There was an error during the authentication');
+        } else {
+          if (access_token) {
+            $.ajax({
+                url: 'https://api.spotify.com/v1/me',
+                headers: {
+                  'Authorization': 'Bearer ' + access_token
+                },
+                success: function(response) {
+                  document.getElementById("user-name").innerHTML = response["display_name"]
+                  songUpdateInterval = setInterval(updateTrackInfo, 5000)
+                  $('#login').hide();
+                  $('#loggedin').show();
+                  
+                }
+            });
+          } else {
+              // render initial screen
+              $('#login').show();
+              $('#loggedin').hide();
+          }
+
+          document.getElementById('obtain-new-token').addEventListener('click', function() {
+            $.ajax({
+              url: '/refresh_token',
+              data: {
+                'refresh_token': refresh_token
+              }
+            }).done(function(data) {
+              access_token = data.access_token;
+
+            });
+          }, false);
+        }
+      })();
+    </script>
+  </body>
+</html>
+

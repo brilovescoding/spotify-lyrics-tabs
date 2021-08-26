@@ -1,0 +1,7 @@
+.env
+node_modules/
+package
+.DS_Store
+npm-debug.log
+build
+examples/

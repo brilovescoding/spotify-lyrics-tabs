@@ -1,0 +1,26 @@
+{
+  "name": "spotify-lyrics-player",
+  "version": "1.0.0",
+  "description": "Spotify music player",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian Schott",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.4",
+    "dotenv": "^10.0.0",
+    "events": "^3.3.0",
+    "express": "~4.16.0",
+    "express-handlebars": "^5.3.3",
+    "html2plaintext": "^2.1.2",
+    "querystring": "~0.2.0",
+    "request": "^2.88.2"
+  }
+}
