@@ -5,3 +5,4 @@ package
 npm-debug.log
 build
 examples/
+tmp/
