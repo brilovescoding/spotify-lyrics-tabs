@@ -63,7 +63,7 @@
           let trackNameShortened = trackInfo.trackName
           for (let i = 0; i < charactersToCut.length; i++) {
             if (trackNameShortened.indexOf(charactersToCut[i]) != -1)
-            trackNameShortened = trackNameShortened.substring(0, trackNameShortened.indexOf(charactersToCut[i]))
+              trackNameShortened = trackNameShortened.substring(0, trackNameShortened.indexOf(charactersToCut[i]))
           }
           console.log("Shortened track name is " + trackNameShortened)
           $.ajax({
